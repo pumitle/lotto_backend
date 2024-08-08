@@ -4,7 +4,7 @@ const router = express.Router();
 
 // กำหนด route ที่จะใช้ใน API
 router.get('/', (req, res) => {
-  res.send('Hello from the /testapp endpoint!');
+  res.send('Hello World');
 });
 
 router.get('/example', (req, res) => {
