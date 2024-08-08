@@ -20,6 +20,6 @@ app.use(bodyParser.text());
 app.use(bodyParser.json());
 
 // ตั้งค่า routes
-app.use("/testapp", test);
+app.use("/", test);
 // ส่งออก app
 module.exports = { app };
