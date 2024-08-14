@@ -4,6 +4,7 @@ const cors = require('cors');
 
 // นำเข้าส่วนที่ต้องการจาก API ต่างๆ
 const { router: test } = require('./api/test');
+const { router: user_all} = require('./api/user_all');
 
 // สร้าง instance ของ Express
 const app = express();
@@ -21,5 +22,6 @@ app.use(bodyParser.json());
 
 // ตั้งค่า routes
 app.use("/", test);
+app.use("/user",user_all);
 // ส่งออก app
 module.exports = { app };
