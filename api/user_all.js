@@ -40,7 +40,8 @@ router.post("/login",(req,res)=>{
                 password:user.password,
                 phone:user.phone,
                 image:user.image,
-                type:user.type
+                type:user.type,
+                wallet: user.wallet
             };
 
             const token = jwt.sign(userRes, 'your-secret-key', { expiresIn: '1h' });
@@ -53,6 +54,8 @@ router.post("/login",(req,res)=>{
 
 
 });
+
+// router.post
 
 
 // ส่งออก router

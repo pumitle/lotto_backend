@@ -1,0 +1,13 @@
+{
+	"folders": [
+		{
+			"path": "../../ace_lotto"
+		},
+		{
+			"path": ".."
+		}
+	],
+	"settings": {
+		"java.configuration.updateBuildConfiguration": "interactive"
+	}
+}
