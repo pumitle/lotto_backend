@@ -55,7 +55,25 @@ router.post("/login",(req,res)=>{
 
 });
 
-// router.post
+router.post("/register",(req,res)=>{
+    const {name ,email ,phone, password,wallet} = req.body;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    
+    if (!emailRegex.test(email)) {
+        return res.status(400).json({ error: 'Invalid email format' });
+    }
+
+    const query = 'INSERT INTO User (name,email,phone,password,type,wallet) VALUES (?,?,?,?,?,?)';
+    conn.query(query,[name,email,phone,password,'User',wallet],(err,result)=>{
+        if (err) {
+            console.error('Error during registration:', err);
+            return res.status(500).json({ err: 'Error during registration' });
+        }
+
+        return  res.status(201).json({ success: true, user: result, message: "Register successful" });
+    });
+});
 
 
 // ส่งออก router
