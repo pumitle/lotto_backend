@@ -126,6 +126,18 @@ router.post("/getreward",(req, res) =>{
 });
 
 
+router.get("/showreward",(req, res) =>{
+
+    const  sql = "SELECT * FROM Lotto";
+    conn.query(sql,(err,result)=>{
+        if(err){
+            res.json(err);
+        }else{
+            res.json(result);
+        }
+    });
+
+});
 
 
 // ส่งออก router
