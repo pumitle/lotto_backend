@@ -139,6 +139,25 @@ router.get("/showreward",(req, res) =>{
 
 });
 
+router.get("/getrewardbystatus", (req, res) => {
+    // กำหนดค่า status ที่ต้องการ
+    const statusValues = [1, 2, 3, 4, 5];
+    
+    // สร้างเงื่อนไข SQL ด้วย IN clause
+    const sql = "SELECT * FROM Lotto WHERE status IN (?)";
+    
+    // ใช้ query parameter เพื่อป้องกัน SQL injection
+    conn.query(sql, [statusValues], (err, result) => {
+        if (err) {
+            // ส่งกลับข้อผิดพลาดในกรณีที่มีข้อผิดพลาดเกิดขึ้น
+            res.status(500).json({ error: err.message });
+        } else {
+            // ส่งกลับผลลัพธ์
+            res.json(result);
+        }
+    });
+});
+
 
 // ส่งออก router
 module.exports = { router };
