@@ -22,7 +22,7 @@ const router = express.Router();
 
 ///สุ่มเลข 100 ชุด
 router.post("/random", (req, res) => {
-    const sqlSelect = "SELECT COUNT(*) AS count FROM Lotto";
+    const sqlSelect = "SELECT COUNT(*) AS count FROM Lotto1";
     
     conn.query(sqlSelect, (err, result) => {
         if (err) {
@@ -41,7 +41,7 @@ router.post("/random", (req, res) => {
             randomNumbers.add(randomNumber);
         }
 
-        const sqlInsert = "INSERT INTO Lotto (number_lot, price) VALUES ?";
+        const sqlInsert = "INSERT INTO Lotto1 (number_lot, price) VALUES ?";
         const values = Array.from(randomNumbers).map(num => [num,'80']);
 
         conn.query(sqlInsert, [values], (err, result) => {
@@ -58,7 +58,7 @@ router.post("/random", (req, res) => {
 ///ลบข้อมูลแล้ว สุ่มใหม่
 router.post("/resetrandom", (req, res) => {
     // ลบข้อมูลทั้งหมดในตาราง Lotto ก่อน
-    const sqlDelete = "DELETE FROM Lotto";
+    const sqlDelete = "DELETE FROM Lotto1";
     
     conn.query(sqlDelete, (err, result) => {
         if (err) {
@@ -72,7 +72,7 @@ router.post("/resetrandom", (req, res) => {
             randomNumbers.add(randomNumber);
         }
 
-        const sqlInsert = "INSERT INTO Lotto (number_lot, price) VALUES ?";
+        const sqlInsert = "INSERT INTO Lotto1 (number_lot, price) VALUES ?";
         const values = Array.from(randomNumbers).map(num => [num, '80']); // ใส่ราคาคงที่เป็น 80
 
         conn.query(sqlInsert, [values], (err, result) => {
@@ -134,7 +134,7 @@ router.post("/getreward", (req, res) => {
     }
 
     // SQL query เพื่อตรวจสอบว่ามีรางวัลที่เลือกแล้วหรือไม่
-    const checkExistingStatus = "SELECT COUNT(*) AS count FROM Lotto WHERE status = ?";
+    const checkExistingStatus = "SELECT COUNT(*) AS count FROM Lotto1 WHERE status = ?";
     
     conn.query(checkExistingStatus, [prizeRank], (err, result) => {
         if (err) {
@@ -147,7 +147,7 @@ router.post("/getreward", (req, res) => {
         }
 
         // SQL query เพื่อเลือกเลขจากตาราง Lotto โดยเลือกเฉพาะที่ยังไม่มีสถานะ (เช่น สถานะเป็น NULL หรือเป็นค่าเริ่มต้น)
-        const numSelect = "SELECT lot_id, number_lot FROM Lotto WHERE status IS NULL ORDER BY RAND() LIMIT 1";
+        const numSelect = "SELECT lot_id, number_lot FROM Lotto1 WHERE status IS NULL ORDER BY RAND() LIMIT 1";
 
         conn.query(numSelect, (err, result) => {
             if (err) {
@@ -164,7 +164,7 @@ router.post("/getreward", (req, res) => {
             const winningId = result[0].lot_id;
 
             // SQL query เพื่ออัปเดตสถานะของชุดเลขที่ถูกสุ่ม
-            const sqlUpdate = "UPDATE Lotto SET status = ? WHERE lot_id = ?";
+            const sqlUpdate = "UPDATE Lotto1 SET status = ? WHERE lot_id = ?";
 
             conn.query(sqlUpdate, [prizeRank, winningId], (err, updateResult) => {
                 if (err) {
@@ -181,7 +181,7 @@ router.post("/getreward", (req, res) => {
 
 router.get("/showreward",(req, res) =>{
 
-    const  sql = "SELECT * FROM Lotto";
+    const  sql = "SELECT * FROM Lotto1";
     conn.query(sql,(err,result)=>{
         if(err){
             res.json(err);
@@ -195,7 +195,8 @@ router.get("/showreward",(req, res) =>{
 //แสดงแค่ตัวเลข
 router.get("/getNumbers",(req, res) =>{
 
-    const  sql = "SELECT number_lot FROM Lotto  ";
+    const  sql = "SELECT number_lot FROM Lotto1  ";
+
     conn.query(sql,(err,result)=>{
         if(err){
             res.json(err);
@@ -206,12 +207,50 @@ router.get("/getNumbers",(req, res) =>{
 
 });
 
+//รีเซตระบบ 
+router.delete("/resetsys", (req, res) => {
+    // SQL Query สำหรับการปิดการตรวจสอบ `FOREIGN KEY` ชั่วคราว
+    const disableForeignKeyChecks = "SET FOREIGN_KEY_CHECKS = 0";
+
+    // SQL Query สำหรับการลบข้อมูลทั้งหมดจากตาราง Lotto
+    const deleteData = "DELETE FROM Lotto1";
+
+    // SQL Query สำหรับการเปิดการตรวจสอบ `FOREIGN KEY` กลับคืน
+    const enableForeignKeyChecks = "SET FOREIGN_KEY_CHECKS = 1";
+
+    // เริ่มต้นการลบข้อมูล
+    conn.query(disableForeignKeyChecks, (err) => {
+        if (err) {
+            return res.json({ error: 'Failed to disable foreign key checks', details: err });
+        }
+
+        conn.query(deleteData, (err, result) => {
+            if (err) {
+                // หากเกิดข้อผิดพลาดในระหว่างการลบข้อมูล
+                return res.json({ error: 'Failed to delete data', details: err });
+            }
+
+            // เปิดการตรวจสอบ `FOREIGN KEY` กลับคืน
+            conn.query(enableForeignKeyChecks, (err) => {
+                if (err) {
+                    return res.json({ error: 'Failed to enable foreign key checks', details: err });
+                }
+
+                // ส่งผลลัพธ์เมื่อสำเร็จ
+                res.json({ success: true, result });
+            });
+        });
+    });
+});
+
+
+
 router.get("/getrewardbystatus", (req, res) => {
     // กำหนดค่า status ที่ต้องการ
     const statusValues = [1, 2, 3, 4, 5];
     
     // สร้างเงื่อนไข SQL ด้วย IN clause
-    const sql = "SELECT * FROM Lotto WHERE status IN (?)";
+    const sql = "SELECT * FROM Lotto1 WHERE status IN (?)";
     
     // ใช้ query parameter เพื่อป้องกัน SQL injection
     conn.query(sql, [statusValues], (err, result) => {
