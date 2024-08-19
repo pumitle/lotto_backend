@@ -207,6 +207,19 @@ router.get("/getNumbers",(req, res) =>{
 
 });
 
+// Node.js Express Example
+router.get("/checkdata", (req, res) => {
+    const sql = "SELECT COUNT(*) AS count FROM Lotto1";
+    conn.query(sql, (err, result) => {
+        if (err) {
+            return res.json(err);
+        }
+        const hasData = result[0].count > 0;
+        res.json({ hasData });
+    });
+});
+
+
 //รีเซตระบบ 
 router.delete("/resetsys", (req, res) => {
     // SQL Query สำหรับการปิดการตรวจสอบ `FOREIGN KEY` ชั่วคราว
