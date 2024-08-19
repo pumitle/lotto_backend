@@ -125,6 +125,7 @@ router.post("/resetrandom", (req, res) => {
 
 // });
 
+//ออกรางวัล 1-5 
 router.post("/getreward", (req, res) => {
     const { prizeRank } = req.body;
 
@@ -181,6 +182,20 @@ router.post("/getreward", (req, res) => {
 router.get("/showreward",(req, res) =>{
 
     const  sql = "SELECT * FROM Lotto";
+    conn.query(sql,(err,result)=>{
+        if(err){
+            res.json(err);
+        }else{
+            res.json(result);
+        }
+    });
+
+});
+
+//แสดงแค่ตัวเลข
+router.get("/getNumbers",(req, res) =>{
+
+    const  sql = "SELECT number_lot FROM Lotto  ";
     conn.query(sql,(err,result)=>{
         if(err){
             res.json(err);

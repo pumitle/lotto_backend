@@ -1,0 +1,12 @@
+{
+    "folders": [
+        {
+            "name": "ace_lotto",
+            "path": "../../ace_lotto"
+        },
+        {
+            "name": "back_end",
+            "path": ".."
+        }
+    ]
+}
