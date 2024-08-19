@@ -220,13 +220,16 @@ router.get("/checkdata", (req, res) => {
 });
 
 
-//รีเซตระบบ 
+// รีเซตระบบ 
 router.delete("/resetsys", (req, res) => {
     // SQL Query สำหรับการปิดการตรวจสอบ `FOREIGN KEY` ชั่วคราว
     const disableForeignKeyChecks = "SET FOREIGN_KEY_CHECKS = 0";
 
     // SQL Query สำหรับการลบข้อมูลทั้งหมดจากตาราง Lotto
-    const deleteData = "DELETE FROM Lotto";
+    const deleteLottoData = "DELETE FROM Lotto";
+
+    // SQL Query สำหรับการลบข้อมูลในตาราง User ยกเว้นสมาชิกที่มี type เป็น Admin
+    const deleteUserData = "DELETE FROM User WHERE type != 'Admin'";
 
     // SQL Query สำหรับการเปิดการตรวจสอบ `FOREIGN KEY` กลับคืน
     const enableForeignKeyChecks = "SET FOREIGN_KEY_CHECKS = 1";
@@ -237,20 +240,27 @@ router.delete("/resetsys", (req, res) => {
             return res.json({ error: 'Failed to disable foreign key checks', details: err });
         }
 
-        conn.query(deleteData, (err, result) => {
+        // ลบข้อมูลในตาราง Lotto
+        conn.query(deleteLottoData, (err, result) => {
             if (err) {
-                // หากเกิดข้อผิดพลาดในระหว่างการลบข้อมูล
-                return res.json({ error: 'Failed to delete data', details: err });
+                return res.json({ error: 'Failed to delete Lotto data', details: err });
             }
 
-            // เปิดการตรวจสอบ `FOREIGN KEY` กลับคืน
-            conn.query(enableForeignKeyChecks, (err) => {
+            // ลบข้อมูลในตาราง User ยกเว้น Admin
+            conn.query(deleteUserData, (err, result) => {
                 if (err) {
-                    return res.json({ error: 'Failed to enable foreign key checks', details: err });
+                    return res.json({ error: 'Failed to delete User data', details: err });
                 }
 
-                // ส่งผลลัพธ์เมื่อสำเร็จ
-                res.json({ success: true, result });
+                // เปิดการตรวจสอบ `FOREIGN KEY` กลับคืน
+                conn.query(enableForeignKeyChecks, (err) => {
+                    if (err) {
+                        return res.json({ error: 'Failed to enable foreign key checks', details: err });
+                    }
+
+                    // ส่งผลลัพธ์เมื่อสำเร็จ
+                    res.json({ success: true, result });
+                });
             });
         });
     });
