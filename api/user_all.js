@@ -18,42 +18,39 @@ router.get("/",(req,res)=>{
 
 });
 
-router.post("/login",(req,res)=>{
-    const {email , password} = req.body;
+router.post("/login", (req, res) => {
+    const { email, password } = req.body;
 
-    if(!email || !password){
-        return res.status(400).json({error : "email and password are required"});
+    if (!email || !password) {
+        return res.status(400).json({ error: "email and password are required" });
     }
 
-    const sql = "SELECT * FROM User WHERE email = ? AND password = ?  ";
-    conn.query(sql,[email,password],(err,result)=> {
+    const sql = "SELECT * FROM User WHERE email = ? AND password = ?";
+    conn.query(sql, [email, password], (err, result) => {
         if (err) {
             return res.status(500).json({ error: "Internal Server Error" });
-          }
+        }
 
-          if (result.length > 0) {
+        if (result.length > 0) {
             const user = result[0];
             const userRes = {
-                Uid : user.Uid,
+                Uid: user.Uid,
                 name: user.name,
                 email: user.email,
-                password:user.password,
-                phone:user.phone,
-                image:user.image,
-                type:user.type,
+                password: user.password,
+                phone: user.phone,
+                image: user.image,
+                type: user.type,
                 wallet: user.wallet
             };
 
-            const token = jwt.sign(userRes, 'your-secret-key', { expiresIn: '1h' });
-            return res.json({ message: "Login successful", user: userRes, token });
-            return res.json({ token });
-          }else{
+            return res.json({ message: "Login successful", user: userRes });
+        } else {
             return res.status(401).json({ error: "Invalid email or password" });
-          }
+        }
     });
-
-
 });
+
 
 router.post("/register",(req,res)=>{
     const {name ,email ,phone, password,wallet} = req.body;
