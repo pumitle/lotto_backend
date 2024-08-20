@@ -73,7 +73,7 @@ router.post("/register",(req,res)=>{
 });
 
 router.get("/getuserbyid",(req,res) => {
-    const uid = req.body.uid;
+    const uid = req.query.uid;
 
     if (!uid) {
         return res.status(400).json({ error: "UID is required" });
