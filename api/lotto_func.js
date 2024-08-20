@@ -85,45 +85,7 @@ router.post("/resetrandom", (req, res) => {
     });
 });
 
-//ออกรางวัล 1-5 
-// router.post("/getreward",(req, res) =>{
 
-//     const { prizeRank } = req.body;
-
-//     if (!prizeRank) {
-//         return res.status(400).json({ error: "Prize rank is required" });
-//     }
-
-//        // SQL query เพื่อเลือกเลขจากตาราง Lotto โดยเลือกเฉพาะที่ยังไม่มีสถานะ (เช่น สถานะเป็น NULL หรือเป็นค่าเริ่มต้น)
-//      const numSelect = "SELECT lot_id, number_lot FROM Lotto  WHERE status IS NULL ORDER BY RAND() LIMIT 1";
-
-//      conn.query(numSelect, (err, result) => {
-//         if (err) {
-//             return res.status(500).json({ error: "Database query failed" });
-//         }
-
-//         // ตรวจสอบว่ามีข้อมูลที่ได้จากการ query หรือไม่
-//         if (result.length === 0) {
-//             return res.status(404).json({ message: "No records found in the database" });
-//         }
-
-//         // เลขที่ถูกสุ่มขึ้นมา
-//         const winningNumber = result[0].number_lot;
-//         const winningId = result[0].lot_id;
-
-//         // SQL query เพื่ออัปเดตสถานะของชุดเลขที่ถูกสุ่ม
-//         const sqlUpdate = "UPDATE Lotto SET status = ? WHERE lot_id = ?";
-
-//         conn.query(sqlUpdate, [prizeRank, winningId], (err, updateResult) => {
-//             if (err) {
-//                 return res.status(500).json({ error: "Failed to update the status" });
-//             }
-
-//             res.json({ message: "Winning number selected and status updated", winningNumber: winningNumber, prizeRank: prizeRank });
-//         });
-//     });
-
-// });
 
 //ออกรางวัล 1-5 
 router.post("/getreward", (req, res) => {
@@ -191,6 +153,22 @@ router.get("/showreward",(req, res) =>{
     });
 
 });
+
+//แรนด้อมโชวล็อตเตอรี่ แค่ 10 ชุด 
+router.get("/lottoranshow", (req, res) => {
+    // SQL query to select 10 random lotto records
+    const sql = "SELECT * FROM Lotto ORDER BY RAND() LIMIT 10";
+
+    conn.query(sql, (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: "Internal Server Error", details: err });
+        }
+
+        // Send the results as JSON response
+        res.json(result);
+    });
+});
+
 
 //แสดงแค่ตัวเลข
 router.get("/getNumbers",(req, res) =>{
