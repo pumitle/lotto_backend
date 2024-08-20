@@ -72,6 +72,84 @@ router.post("/register",(req,res)=>{
     });
 });
 
+router.get("/getuserbyid",(req,res) => {
+    const uid = req.body.uid;
+
+    if (!uid) {
+        return res.status(400).json({ error: "UID is required" });
+      }
+    const sql = 'SELECT * FROM User WHERE Uid = ?';
+    conn.query(sql,[uid],(err,result) =>{
+        if (err) {
+            console.error('Error executing query:', err);
+            return res.status(500).json({ error: "Database query failed" });
+          }
+          if (result.length === 0) {
+            return res.status(404).json({ error: "User not found" });
+          }
+
+          if (result.length > 0) {
+            const user = result[0];
+            const userRes = {
+                Uid: user.Uid,
+                name: user.name,
+                email: user.email,
+                password: user.password,
+                phone: user.phone,
+                image: user.image,
+                type: user.type,
+                wallet: user.wallet
+            };
+
+            return res.json({user: userRes});
+        }
+    });
+
+});
+
+//การเติมเงิน 
+router.put("/addmoney", (req, res) => {
+    const { uid, amount } = req.body;
+
+    // ตรวจสอบข้อมูลที่ได้รับ
+    if (!uid || amount == null) {
+        return res.status(400).json({ error: "UID and amount are required" });
+    }
+
+    // ตรวจสอบว่าจำนวนเงินเป็นจำนวนที่ถูกต้อง
+    if (isNaN(amount) || amount <= 0) {
+        return res.status(400).json({ error: "Invalid amount" });
+    }
+
+    // คำสั่ง SQL เพื่อตรวจสอบยอดเงินปัจจุบัน
+    const getBalanceQuery = 'SELECT wallet FROM User WHERE Uid = ?';
+    conn.query(getBalanceQuery, [uid], (err, result) => {
+        if (err) {
+            console.error('Error fetching current balance:', err);
+            return res.status(500).json({ error: "Error fetching current balance" });
+        }
+
+        if (result.length === 0) {
+            return res.status(404).json({ error: "User not found" });
+        }
+
+        const currentBalance = parseFloat(result[0].wallet);
+        const newBalance = currentBalance + parseFloat(amount);
+
+        // คำสั่ง SQL เพื่อตั้งยอดเงินใหม่
+        const updateBalanceQuery = 'UPDATE User SET wallet = ? WHERE Uid = ?';
+        conn.query(updateBalanceQuery, [newBalance, uid], (err) => {
+            if (err) {
+                console.error('Error updating balance:', err);
+                return res.status(500).json({ error: "Error updating balance" });
+            }
+
+            res.json({ message: "Balance updated successfully", newBalance });
+        });
+    });
+});
+
+
 
 // ส่งออก router
 module.exports = { router };
