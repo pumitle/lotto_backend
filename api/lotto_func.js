@@ -288,5 +288,87 @@ router.get("/getrewardbystatus", (req, res) => {
 });
 
 
+//////////////////////
+// User function
+
+//ซื้อรางวัล 
+router.put("/buylot", (req, res) => {
+    const { uid, lotId } = req.body; // รับค่า uid และ lotId จาก body
+
+    // ตรวจสอบเงินในกระเป๋าผู้ใช้
+    const checkWalletSql = "SELECT wallet FROM User WHERE Uid = ?";
+    conn.query(checkWalletSql, [uid], (err, result) => {
+        if (err) {
+            return res.status(500).json({ error: "Internal Server Error", details: err });
+        }
+
+        if (result.length === 0) {
+            return res.status(400).json({ error: "User not found" });
+        }
+
+        const userWallet = parseFloat(result[0].wallet);
+
+        if (userWallet < 80) {
+            return res.status(400).json({ error: "Insufficient funds" });
+        }
+
+        // ดำเนินการซื้อรางวัลและอัพเดตกระเป๋าเงิน
+        const purchaseSql = "UPDATE Lotto SET uid_fk = ? WHERE lot_id = ? AND uid_fk IS NULL";
+        conn.query(purchaseSql, [uid, lotId], (err, result) => {
+            if (err) {
+                return res.status(500).json({ error: "Internal Server Error", details: err });
+            }
+
+            if (result.affectedRows === 0) {
+                return res.status(400).json({ error: "Lotto not available or already purchased" });
+            }
+
+            const newWalletBalance = userWallet - 80;
+            const updateWalletSql = "UPDATE User SET wallet = ? WHERE Uid = ?";
+            conn.query(updateWalletSql, [newWalletBalance, uid], (err, result) => {
+                if (err) {
+                    return res.status(500).json({ error: "Failed to update wallet", details: err });
+                }
+
+                res.json({ success: true, message: "Lotto purchased successfully", newWalletBalance });
+            });
+        });
+    });
+});
+
+
+// ค้นหาเลขรางวัล
+router.get("/search", (req, res) => {
+    const { digit1, digit2, digit3, digit4, digit5, digit6 } = req.query;
+
+    // สร้างเงื่อนไขการค้นหาแต่ละตำแหน่งของตัวเลข
+    const conditions = [];
+    if (digit1) conditions.push(`SUBSTRING(number_lot, 1, 1) = ${conn.escape(digit1)}`);
+    if (digit2) conditions.push(`SUBSTRING(number_lot, 2, 1) = ${conn.escape(digit2)}`);
+    if (digit3) conditions.push(`SUBSTRING(number_lot, 3, 1) = ${conn.escape(digit3)}`);
+    if (digit4) conditions.push(`SUBSTRING(number_lot, 4, 1) = ${conn.escape(digit4)}`);
+    if (digit5) conditions.push(`SUBSTRING(number_lot, 5, 1) = ${conn.escape(digit5)}`);
+    if (digit6) conditions.push(`SUBSTRING(number_lot, 6, 1) = ${conn.escape(digit6)}`);
+
+    // รวมเงื่อนไขการค้นหา
+    const whereClause = conditions.length > 0 ? `WHERE ${conditions.join(' AND ')}` : '';
+
+    // สร้าง SQL Query สำหรับการค้นหา
+    const sql = `SELECT * FROM Lotto ${whereClause}`;
+
+    // ดำเนินการค้นหาในฐานข้อมูล
+    conn.query(sql, (err, results) => {
+        if (err) {
+            return res.status(500).json({ error: "Internal Server Error", details: err });
+        }
+
+        // ส่งผลลัพธ์การค้นหากลับไป
+        res.json(results);
+    });
+});
+
+
+
+
 // ส่งออก router
 module.exports = { router };
