@@ -345,8 +345,157 @@ router.get("/search", (req, res) => {
     });
 });
 
+//สลากของฉัน
+router.get("/mylotto" , async (req,res) => {
+    const uid = req.query.uid;
+
+    if (!uid) {
+        return res.status(400).json({ message: "User ID is required." });
+    }
+
+    try {
+        // Query to get all lotto tickets purchased by the user
+        const query = `
+            SELECT lot_id, number_lot, price, status, uid_fk
+            FROM Lotto
+            WHERE uid_fk = ?;
+        `;
+
+        // Execute the query
+        conn.query(query, [uid], (error, results) => {
+            if (error) {
+                console.error("Error executing query:", error);
+                return res.status(500).json({ message: "An error occurred while fetching lotto tickets." });
+            }
+
+            // Check if any tickets were found
+            if (results.length > 0) {
+                res.status(200).json({ tickets: results });
+            } else {
+                res.status(404).json({ message: "No lotto tickets found for this user." });
+            }
+        });
+    } catch (e) {
+        console.error("Error fetching lotto tickets:", e);
+        res.status(500).json({ message: "An error occurred while fetching lotto tickets." });
+    }
+
+});
 
 
+//ดึงข้อมูล lotto
+router.get("/getlotto" , (req,res)=>{
+    const lotid = req.query.lotid;
+
+    if (!lotid ) {
+        return res.status(400).json({ message: "Lotto ID is required." });
+    }
+    try {
+        // Query to get all lotto tickets purchased by the user
+        const query = `
+            SELECT lot_id, number_lot, price, status, uid_fk
+            FROM Lotto
+            WHERE lot_id = ?;
+        `;
+
+        // Execute the query
+        conn.query(query, [lotid], (error, results) => {
+            if (error) {
+                console.error("Error executing query:", error);
+                return res.status(500).json({ message: "An error occurred while fetching lotto tickets." });
+            }
+
+            // Check if any tickets were found
+            if (results.length > 0) {
+                res.status(200).json(results[0]);
+            } else {
+                res.status(404).json({ message: "No lotto tickets found for this user." });
+            }
+        });
+    } catch (e) {
+        console.error("Error fetching lotto tickets:", e);
+        res.status(500).json({ message: "An error occurred while fetching lotto tickets." });
+    }
+
+});
+
+//เส้นขึ้นรางวัล 1-5 
+router.put("/cashmoney", (req, res) => {
+    const { uid, lottoId } = req.body;
+
+    if (!uid || !lottoId) {
+        return res.status(400).json({ error: "UID and Lotto ID are required" });
+    }
+
+    // คำสั่ง SQL เพื่อตรวจสอบสถานะล็อตเตอรี่
+    conn.query('SELECT status FROM Lotto WHERE lot_id = ?', [lottoId], (err, lottoResults) => {
+        if (err) {
+            console.error('Error fetching lotto status:', err);
+            return res.status(500).json({ error: "Error fetching lotto status" });
+        }
+
+        if (lottoResults.length === 0) {
+            return res.status(404).json({ error: "Lotto ticket not found" });
+        }
+
+        const status = lottoResults[0].status;
+        console.log('Lotto status:', status); 
+        let rewardAmount = 0;
+
+        switch (status) {
+            case '1':
+                rewardAmount = 6000000; // รางวัลที่ 1
+                break;
+            case '2':
+                rewardAmount = 200000; // รางวัลที่ 2
+                break;
+            case '3':
+                rewardAmount = 80000; // รางวัลที่ 3
+                break;
+            case '4':
+                rewardAmount = 40000;  // รางวัลที่ 4
+                break;
+            case '5':
+                rewardAmount = 20000;  // รางวัลที่ 5
+                break;
+            default:
+                return res.status(400).json({ error: "Invalid status" });
+        }
+
+        // คำสั่ง SQL เพื่อตรวจสอบยอดเงินปัจจุบันของผู้ใช้
+        conn.query('SELECT wallet FROM User WHERE Uid = ?', [uid], (err, userResults) => {
+            if (err) {
+                console.error('Error fetching user balance:', err);
+                return res.status(500).json({ error: "Error fetching user balance" });
+            }
+
+            if (userResults.length === 0) {
+                return res.status(404).json({ error: "User not found" });
+            }
+
+            const currentBalance = parseFloat(userResults[0].wallet);
+            const newBalance = currentBalance + rewardAmount;
+
+            // คำสั่ง SQL เพื่อตั้งยอดเงินใหม่
+            conn.query('UPDATE User SET wallet = ? WHERE Uid = ?', [newBalance, uid], (err) => {
+                if (err) {
+                    console.error('Error updating balance:', err);
+                    return res.status(500).json({ error: "Error updating balance" });
+                }
+
+                // ลบล็อตเตอรี่ที่ถูกออกจากฐานข้อมูล
+                conn.query('DELETE FROM Lotto WHERE lot_id = ?', [lottoId], (err) => {
+                    if (err) {
+                        console.error('Error deleting lotto ticket:', err);
+                        return res.status(500).json({ error: "Error deleting lotto ticket" });
+                    }
+
+                    res.json({ message: "Prize money added and lotto ticket deleted successfully", newBalance });
+                });
+            });
+        });
+    });
+});
 
 // ส่งออก router
 module.exports = { router };
