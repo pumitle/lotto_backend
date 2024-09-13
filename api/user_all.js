@@ -52,25 +52,60 @@ router.post("/login", (req, res) => {
 });
 
 
-router.post("/register",(req,res)=>{
-    const {name ,email ,phone, password,wallet} = req.body;
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+// router.post("/register",(req,res)=>{
+//     const {name ,email ,phone, password,wallet} = req.body;
+//     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
     
+//     if (!emailRegex.test(email)) {
+//         return res.status(400).json({ error: 'Invalid email format' });
+//     }
+
+//     const query = 'INSERT INTO User (name,email,phone,password,type,wallet) VALUES (?,?,?,?,?,?)';
+//     conn.query(query,[name,email,phone,password,'User',wallet],(err,result)=>{
+//         if (err) {
+//             console.error('Error during registration:', err);
+//             return res.status(500).json({ err: 'Error during registration' });
+//         }
+
+//         return  res.status(201).json({ success: true, user: result, message: "Register successful" });
+//     });
+// });
+
+router.post("/register", (req, res) => {
+    const { name, email, phone, password, wallet } = req.body;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
     if (!emailRegex.test(email)) {
         return res.status(400).json({ error: 'Invalid email format' });
     }
 
-    const query = 'INSERT INTO User (name,email,phone,password,type,wallet) VALUES (?,?,?,?,?,?)';
-    conn.query(query,[name,email,phone,password,'User',wallet],(err,result)=>{
+    // ตรวจสอบว่าอีเมลหรือเบอร์โทรศัพท์มีอยู่แล้วในฐานข้อมูลหรือไม่
+    const checkQuery = 'SELECT * FROM User WHERE email = ? OR phone = ?';
+    conn.query(checkQuery, [email, phone], (err, results) => {
         if (err) {
-            console.error('Error during registration:', err);
-            return res.status(500).json({ err: 'Error during registration' });
+            console.error('Error checking existing user:', err);
+            return res.status(500).json({ error: 'Error checking existing user' });
         }
 
-        return  res.status(201).json({ success: true, user: result, message: "Register successful" });
+        // ถ้าเจอผู้ใช้ที่มีอีเมลหรือเบอร์โทรซ้ำกัน
+        if (results.length > 0) {
+            return res.status(400).json({ error: 'User already exists with this email or phone' });
+        }
+
+        // ถ้าไม่มีผู้ใช้ซ้ำ ทำการสมัครสมาชิก
+        const query = 'INSERT INTO User (name, email, phone, password, type, wallet) VALUES (?, ?, ?, ?, ?, ?)';
+        conn.query(query, [name, email, phone, password, 'User', wallet], (err, result) => {
+            if (err) {
+                console.error('Error during registration:', err);
+                return res.status(500).json({ error: 'Error during registration' });
+            }
+
+            return res.status(201).json({ success: true, user: result, message: 'Register successful' });
+        });
     });
 });
+
 
 router.get("/getuserbyid",(req,res) => {
     const uid = req.query.uid;
